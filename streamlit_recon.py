@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import base64
+from github import Github
 
 def process_excel(input_file):
     # Reading input Excel file
@@ -62,9 +63,26 @@ uploaded_file = st.file_uploader("Upload an Excel file", type=["xlsx"])
 if uploaded_file is not None:
     process_excel(uploaded_file)
     st.write('Download the processed file:')
-    file_path = 'C:/streamlit/sqlbot/gstr_recon_output.xlsx'  # Path to the file
+    file_path = 'gstr_recon_output.xlsx'  # Local path to the processed file
 
-    
+    # Save the file to GitHub
+    access_token = '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'  # Your GitHub access token
+    repo_owner = 'Adityadarji18'  # Repository owner username
+    repo_name = 'recon'  # Repository name
+
+    # Initialize PyGithub
+    g = Github(access_token)
+
+    # Get the repository
+    repo = g.get_user(repo_owner).get_repo(repo_name)
+
+    # Read the file content
+    file_content = open(file_path, 'rb').read()
+
+    # Create or update the file in the repository
+    repo.create_file('path/in/repo/gstr_recon_output.xlsx', 'Commit message', file_content, branch='main')
+
+    # Display download link in Streamlit
     with open(file_path, 'rb') as f:
         file_bytes = f.read()
         file_base64 = base64.b64encode(file_bytes).decode()
