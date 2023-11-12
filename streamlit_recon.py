@@ -66,7 +66,7 @@ if uploaded_file is not None:
     file_path = 'gstr_recon_output.xlsx'  # Local path to the processed file
 
     # Save the file to GitHub
-    access_token = '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'  # Your GitHub access token
+    access_token = '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'  # Your GitHub access token
     repo_owner = 'Adityadarji18'  # Repository owner username
     repo_name = 'recon'  # Repository name
 
