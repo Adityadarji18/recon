@@ -1,7 +1,8 @@
-import streamlit as st
 import pandas as pd
+import streamlit as st
 import base64
-from github import Github
+from io import BytesIO
+import os
 
 def process_excel(input_file):
     # Reading input Excel file
@@ -32,9 +33,11 @@ def process_excel(input_file):
     Mismatched_our = our[our['GSTIN No'].isin(Mismatched['GSTIN No'])]
     Mismatched_gov = gov[gov['GSTIN of supplier'].isin(Mismatched['GSTIN No'])]
 
-    # Create a Pandas Excel writer using xlsxwriter as the engine
-    with pd.ExcelWriter('gstr_recon_output.xlsx', engine='xlsxwriter') as writer:
+        # Create a BytesIO buffer to store the processed Excel file in memory
+    processed_file_buffer = BytesIO()
 
+    # Create an Excel writer with the buffer
+    with pd.ExcelWriter(processed_file_buffer, engine='xlsxwriter') as writer:
         # Write 'Our' dataframe
         our.to_excel(writer, sheet_name='Our', startrow=0, startcol=0, index=False)
 
@@ -55,35 +58,19 @@ def process_excel(input_file):
         Mismatched_our.to_excel(writer, sheet_name='Mismatched', startrow=0, startcol=0,index=False)
         Mismatched_gov.to_excel(writer, sheet_name='Mismatched', startrow=0, startcol=Mismatched_our.shape[1] + 2, index=False)
 
+    # Provide download link without saving to local folder
+    st.write('Download the processed file:')
+    file_bytes = processed_file_buffer.getvalue()
+    file_base64 = base64.b64encode(file_bytes).decode()
+    st.markdown(f"[Download file](data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{file_base64})", unsafe_allow_html=True)
+
 # Streamlit app layout
 st.title('GST Reconciliation App')
 st.write('Upload your Excel file')
 
 uploaded_file = st.file_uploader("Upload an Excel file", type=["xlsx"])
+
 if uploaded_file is not None:
+    # Create a BytesIO buffer to store the processed Excel file in memory
+    processed_file_buffer = BytesIO()
     process_excel(uploaded_file)
-    st.write('Download the processed file:')
-    file_path = 'gstr_recon_output.xlsx'  # Local path to the processed file
-
-    # Save the file to GitHub
-    access_token = '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'  # Your GitHub access token
-    repo_owner = 'Adityadarji18'  # Repository owner username
-    repo_name = 'recon'  # Repository name
-
-    # Initialize PyGithub
-    g = Github(access_token)
-
-    # Get the repository
-    repo = g.get_user(repo_owner).get_repo(repo_name)
-
-    # Read the file content
-    file_content = open(file_path, 'rb').read()
-
-    # Create or update the file in the repository
-    repo.create_file('path/in/repo/gstr_recon_output.xlsx', 'Commit message', file_content, branch='main')
-
-    # Display download link in Streamlit
-    with open(file_path, 'rb') as f:
-        file_bytes = f.read()
-        file_base64 = base64.b64encode(file_bytes).decode()
-        st.markdown(f"[Download file](data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{file_base64})", unsafe_allow_html=True)
